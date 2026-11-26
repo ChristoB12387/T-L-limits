@@ -30,35 +30,39 @@
   .seg button[aria-pressed="true"] { background: var(--accent); color: #06121f; }
   .msg { color: var(--warn); font-size: .95rem; }
   .note { font-size: .8rem; color: var(--muted); }
-  .used { font-size: .85rem; color: var(--muted); margin-bottom: 8px; }
+  .used { font-size: .85rem; color: var(--muted); margin-bottom: 4px; }
   .used b { color: var(--fg); }
   .prof { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 2px 10px; align-items: center; padding: 12px 10px; border: 1px solid var(--line); border-radius: 10px; background: #0b1526; margin-top: 8px; border-left-width: 5px; }
   .prof .n { font-weight: 600; font-size: .98rem; }
   .prof .d { font-size: .75rem; color: var(--muted); }
   .prof .v { font-size: 1.55rem; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; line-height: 1.1; }
   .prof .v2 { font-size: .8rem; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
-  .prof .m { grid-column: 1 / -1; font-size: .85rem; font-weight: 600; margin-top: 4px; }
+  .prof .x { grid-column: 1 / -1; font-size: .78rem; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .prof .m { grid-column: 1 / -1; font-size: .85rem; font-weight: 600; margin-top: 2px; }
   .prof.ok { border-left-color: var(--ok); } .prof.ok .m { color: var(--ok); }
   .prof.over { border-left-color: var(--bad); } .prof.over .m { color: var(--bad); }
   .prof.na { opacity: .6; } .prof.na .v { font-size: 1rem; color: var(--muted); }
-  .flag { color: var(--warn); font-size: .75rem; grid-column: 1 / -1; margin-top: 4px; }
   [hidden] { display: none !important; }
 </style>
 </head>
 <body>
 <main>
   <h1>AW189 RTOW</h1>
-  <div class="sub">CAT A take-off &amp; landing weights · works offline</div>
+  <div class="sub">CAT A weight limitations (WAT) · works offline</div>
 
   <div class="card caution">
-    <div class="note"><b style="color:var(--warn)">Quick-reference aid.</b> From Ops Manual Part B 4.4.1 (0 ft) and 4.4.2 (250 ft), referencing RFM Section 5 Supplement 4. Conditions: wind 0 kt, engine A/I and HEATER off. The published tables remain the reference.</div>
+    <div class="note"><b style="color:var(--warn)">Quick-reference aid.</b> From the AW189 QRH WAT tables, Figures 1-30, 1-32, 1-34, 1-37 and 1-39 (Anti Ice OFF; Heater OFF, or OFF/ON for offshore), interpolated between table values. The published tables remain the reference.</div>
   </div>
 
   <div class="card">
     <h2>Conditions</h2>
     <div class="grid">
-      <label>OAT (°C)<input id="oat" type="number" inputmode="decimal" placeholder="0 to 55"></label>
-      <label>Pressure altitude (ft)<input id="hp" type="number" inputmode="numeric" placeholder="0 to 250" value="0"></label>
+      <label>OAT (°C)<input id="oat" type="number" inputmode="decimal" placeholder="−40 to 55"></label>
+      <label>Pressure altitude (ft)<input id="hp" type="number" inputmode="numeric" placeholder="−1000 to 8000"></label>
+      <label>Headwind (kt)<input id="wind" type="number" inputmode="decimal" placeholder="0 to 40" value="0"></label>
+      <label>8,600 kg weight extension
+        <div class="seg" role="group" aria-label="Weight extension"><button type="button" data-x="1" aria-pressed="true">Fitted</button><button type="button" data-x="0" aria-pressed="false">No</button></div>
+      </label>
       <label class="full">Your weight (optional)
         <input id="wt" type="number" inputmode="decimal" placeholder="e.g. 8300">
         <div class="seg" role="group" aria-label="Weight unit"><button type="button" data-u="kg" aria-pressed="true">kg</button><button type="button" data-u="lb" aria-pressed="false">lb</button></div>
@@ -68,62 +72,80 @@
 
   <div class="card">
     <h2>Maximum weight</h2>
-    <div class="used" id="used">Enter OAT</div>
+    <div class="used" id="used">Enter OAT and pressure altitude</div>
     <div class="msg" id="err" hidden></div>
     <div id="list"></div>
   </div>
 
-  <div class="note">Method: no interpolation. The OAT is rounded <b>up</b> to the next whole degree, and an OAT below 0 °C uses the 0 °C row. A pressure altitude of 0 ft or below uses the 0 ft table (4.4.1); above 0 ft up to 250 ft uses the 250 ft table (4.4.2). Above 250 ft there is no table here. The 0 ft table is published in lb only, so its kg figures are converted (1 kg = 2.20462 lb).</div>
+  <div class="note">Method: each table is interpolated in a straight line between the two nearest pressure altitudes (500 ft steps) and temperatures (10 °C steps, 50 to 55 °C). If any table value needed is blank, the profile shows "outside the table". The unfactored wind credit (Figures 1-30, 1-32 and 1-39) is interpolated between the listed winds and added; Clear Area and Offshore take-off have no wind table, so no credit is given. Enter the headwind you are allowed to use under your factoring rules. Results are rounded down to the whole kg and never exceed the profile's maximum (8,300 kg, or 8,600 kg with the weight extension where the table allows it).</div>
 </main>
 <script>
 {
-const R = {"t0":{"ca83":[[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8264,18218],[8227,18138],[8191,18058],[8154,17977],[8118,17897],[8082,17817],[8045,17737],[8009,17656],[7972,17576],[7936,17496],[7863,17335],[7790,17175],[7717,17014],[7645,16854],[7572,16693]],"ca86":[[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"hpv":[[8158,17985],[8150,17968],[8142,17950],[8133,17931],[8124,17911],[8116,17892],[8106,17871],[8097,17850],[8087,17829],[8078,17808],[8068,17786],[8058,17764],[8047,17741],[8037,17719],[8027,17696],[8016,17673],[8006,17650],[7995,17627],[7985,17604],[7975,17581],[7964,17558],[7953,17534],[7944,17513],[7933,17489],[7922,17465],[7912,17444],[7901,17419],[7890,17395],[7880,17373],[7869,17348],[7858,17323],[7843,17291],[7830,17263],[7818,17236],[7805,17207],[7793,17180],[7780,17151],[7767,17123],[7752,17091],[7741,17067],[7727,17035],[7713,17005],[7699,16973],[7684,16941],[7670,16909],[7653,16873],[7638,16838],[7621,16802],[7603,16761],[7584,16719],[7563,16674],[7541,16626],[7518,16575],[7494,16521],[7468,16463],[7441,16404]],"glh":[[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8292,18280],[8283,18261],[8274,18241],[8266,18224],[8258,18206],[8249,18186],[8238,18162],[8227,18137],[8214,18109],[8199,18076],[8181,18037],[8161,17993],[8137,17939],[8110,17880],[8079,17812],[8044,17735],[8005,17648],[7960,17548],[7910,17439],[7855,17317],[7794,17182],[7727,17034],[7652,16870],[7571,16691],[7482,16496]],"oto":[[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18959],[8599,18957],[8597,18954],[8595,18949],[8592,18943],[8589,18935],[8584,18925],[8579,18913],[8572,18898],[8564,18880],[8560,18872],[8555,18861],[8547,18842],[8535,18817],[8520,18784],[8503,18745],[8482,18699],[8458,18647],[8428,18581],[8396,18510],[8367,18447],[8331,18367],[8292,18280],[8249,18186],[8204,18086],[8155,17978],[8103,17864],[8048,17742],[7990,17614],[7936,17496],[7864,17338],[7797,17189],[7726,17033],[7651,16867],[7572,16693]],"old":[[8572,18898],[8558,18867],[8544,18836],[8530,18805],[8516,18775],[8503,18745],[8489,18715],[8477,18688],[8465,18662],[8453,18636],[8440,18608],[8425,18574],[8412,18546],[8400,18519],[8388,18492],[8375,18463],[8364,18439],[8350,18408],[8340,18386],[8325,18353],[8313,18326],[8304,18307],[8292,18280],[8280,18254],[8268,18227],[8255,18200],[8244,18175],[8232,18148],[8220,18121],[8207,18093],[8194,18065],[8180,18034],[8167,18006],[8154,17977],[8141,17947],[8127,17917],[8115,17891],[8101,17860],[8087,17828],[8072,17796],[8058,17764],[8040,17726],[8025,17692],[8009,17657],[7993,17621],[7976,17585],[7961,17550],[7943,17512],[7926,17473],[7907,17433],[7889,17392],[7842,17289],[7788,17169],[7726,17033],[7653,16871],[7572,16693]]},"t250":{"ca83":[[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8255,18199],[8210,18100],[8165,18000],[8120,17901],[8075,17802],[8030,17702],[7985,17603],[7940,17504],[7895,17404],[7850,17305]],"ca86":[[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"hpv":[[8122,17906],[8114,17888],[8105,17869],[8097,17851],[8088,17832],[8079,17812],[8071,17793],[8062,17773],[8053,17753],[8043,17733],[8034,17712],[8025,17691],[8015,17670],[8005,17648],[7995,17626],[7985,17604],[7975,17583],[7965,17561],[7955,17539],[7945,17517],[7935,17495],[7925,17471],[7914,17448],[7903,17423],[7892,17399],[7882,17376],[7871,17352],[7859,17327],[7849,17304],[7838,17279],[7826,17254],[7811,17221],[7797,17190],[7784,17160],[7770,17129],[7756,17099],[7742,17068],[7728,17036],[7713,17004],[7700,16975],[7685,16943],[7668,16906],[7651,16868],[7634,16830],[7617,16792],[7599,16753],[7581,16714],[7563,16674],[7544,16632],[7525,16589],[7505,16545]],"glh":[[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8298,18295],[8297,18291],[8295,18287],[8293,18284],[8292,18280],[8290,18277],[8288,18273],[8287,18269],[8285,18266],[8284,18262],[8272,18236],[8260,18210],[8248,18184],[8237,18159],[8225,18133],[8213,18107],[8200,18078],[8187,18049],[8173,18018],[8158,17985],[8127,17918],[8095,17847],[8061,17771],[8026,17693],[7988,17611],[7949,17524],[7907,17432],[7862,17334],[7816,17230],[7766,17121]],"oto":[[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8596,18942],[8593,18925],[8589,18908],[8586,18891],[8582,18873],[8578,18856],[8575,18839],[8571,18821],[8568,18804],[8564,18787],[8553,18755],[8541,18721],[8527,18686],[8513,18649],[8497,18611],[8479,18572],[8460,18531],[8440,18489],[8419,18445],[8396,18400],[8367,18309],[8333,18213],[8296,18113],[8255,18010],[8211,17902],[8163,17791],[8112,17676],[8056,17555],[7998,17432],[7936,17305]],"old":[[8526,18798],[8514,18770],[8501,18742],[8489,18715],[8476,18687],[8464,18660],[8451,18632],[8439,18604],[8426,18576],[8413,18548],[8400,18520],[8388,18493],[8376,18467],[8365,18441],[8353,18414],[8341,18388],[8328,18360],[8316,18334],[8304,18308],[8292,18281],[8280,18255],[8269,18229],[8256,18202],[8244,18176],[8233,18150],[8221,18124],[8209,18097],[8197,18071],[8185,18045],[8173,18019],[8161,17991],[8147,17961],[8133,17930],[8119,17898],[8104,17866],[8089,17834],[8075,17802],[8060,17769],[8045,17735],[8029,17702],[8014,17668],[7996,17628],[7978,17588],[7959,17547],[7941,17506],[7922,17465],[7903,17423],[7884,17381],[7865,17339],[7845,17296],[7826,17253]]}};
+const R = {"V":[[8192,8300,8300,8300,8249,8165,8071,7972,7869,7739,7656],[8216,8300,8300,8287,8209,8117,8019,7916,7809,7656,7555],[8208,8274,8271,8226,8158,8067,7964,7858,7727,7563,7441],[8123,8221,8210,8159,8086,8001,7907,7795,7643,7446,null],[8029,8117,8128,8087,8011,7924,7828,7712,7554,7329,null],[7934,8013,8017,7987,7932,7843,7747,7628,7437,7212,null],[7837,7907,7907,7874,7818,7750,7664,7537,7320,7082,null],[7702,7795,7798,7762,7705,7638,7559,7421,7203,6949,null],[7568,7658,7676,7651,7592,7527,7447,7304,7076,null,null],[7433,7523,7540,7521,7479,7415,7337,7188,6942,null,null],[7301,7390,7406,7388,7347,7297,7228,7061,6811,null,null],[7173,7259,7274,7256,7217,7169,7108,6928,null,null,null],[7048,7130,7147,7128,7090,7044,6984,6796,null,null,null],[6926,7003,7022,7002,6965,6923,6858,null,null,null,null],[6804,6879,6899,6879,6843,6802,6733,null,null,null,null],[6685,6762,6777,6756,6723,6680,null,null,null,null,null],[6569,6648,6657,6635,6604,null,null,null,null,null,null],[6458,6534,6539,6518,6484,null,null,null,null,null,null],[6351,6421,6423,6402,null,null,null,null,null,null,null]],"CA":[[8600,8600,8600,8600,8600,8600,8600,8600,8600,8276,7898],[8600,8600,8600,8600,8600,8600,8600,8600,8600,8106,7735],[8600,8600,8600,8600,8600,8600,8600,8600,8600,7936,7572],[8600,8600,8600,8600,8600,8600,8600,8600,8300,7763,null],[8600,8600,8600,8600,8600,8600,8600,8600,8300,7592,null],[8600,8600,8600,8600,8600,8600,8600,8300,8234,7424,null],[8600,8600,8600,8600,8600,8600,8600,8300,8042,7259,null],[8600,8600,8600,8600,8600,8600,8300,8300,7853,7094,null],[8514,8541,8546,8566,8600,8600,8300,8243,7669,null,null],[8390,8413,8421,8444,8487,8300,8300,8092,7489,null,null],[8268,8289,8300,8300,8300,8300,8214,7943,7310,null,null],[8146,8166,8267,8270,8280,8300,8063,7797,null,null,null],[8024,8045,8149,8124,8136,8193,7913,7652,null,null,null],[7905,7926,8013,7982,7996,8041,7766,null,null,null,null],[7787,7811,7872,7841,7859,7891,7622,null,null,null,null],[7673,7700,7732,7702,7725,7743,null,null,null,null,null],[7561,7592,7594,7565,7592,null,null,null,null,null,null],[7451,7485,7458,7432,7457,null,null,null,null,null,null],[7345,7381,7325,7302,null,null,null,null,null,null,null]],"SH":[[8300,8300,8300,8300,8300,8300,8300,8300,8300,8201,7822],[8300,8300,8300,8300,8300,8300,8300,8300,8280,8029,7654],[8300,8300,8300,8300,8300,8300,8300,8300,8199,7855,7481],[8300,8300,8300,8300,8300,8300,8300,8267,8117,7677,null],[8300,8300,8300,8300,8300,8300,8293,8185,8031,7498,null],[8300,8300,8300,8300,8300,8300,8212,8104,7909,7321,null],[8300,8300,8300,8300,8278,8207,8131,8015,7788,7148,null],[8300,8300,8300,8235,8157,8090,8024,7895,7667,6977,null],[8300,8258,8185,8113,8038,7974,7909,7774,7510,null,null],[8191,8111,8039,7975,7917,7858,7796,7654,7336,null,null],[8043,7966,7894,7833,7778,7733,7684,7520,7165,null,null],[7899,7823,7753,7693,7640,7598,7559,7378,null,null,null],[7757,7682,7616,7556,7505,7467,7428,7236,null,null,null],[7618,7543,7481,7423,7373,7339,7295,null,null,null,null],[7480,7408,7349,7291,7244,7212,7163,null,null,null,null],[7345,7278,7218,7160,7117,7084,null,null,null,null,null],[7213,7151,7088,7032,6991,null,null,null,null,null,null],[7085,7025,6961,6907,6865,null,null,null,null,null,null],[6960,6900,6836,6784,null,null,null,null,null,null,null]],"OTO":[[8600,8600,8600,8600,8600,8600,8600,8600,8580,8276,7898],[8600,8600,8600,8600,8600,8600,8600,8600,8496,8106,7735],[8600,8600,8600,8600,8600,8600,8600,8564,8396,7936,7572],[8587,8600,8600,8600,8600,8600,8600,8479,8296,7763,null],[8460,8544,8600,8600,8600,8600,8533,8378,8196,null,null]],"OLD":[[8600,8600,8600,8600,8600,8577,8445,8322,8206,8070,7898],[8600,8600,8600,8600,8600,8508,8379,8257,8142,7984,7735],[8600,8600,8600,8600,8572,8440,8313,8194,8057,7889,7572],[8600,8600,8600,8600,8481,8361,8248,8128,7971,7763,null],[8600,8600,8600,8515,8389,8273,8162,8043,7882,null,null]]};
+const OATS = [-40, -30, -20, -10, 0, 10, 20, 30, 40, 50, 55];
+const HP = (n) => Array.from({ length: n }, (_, i) => -1000 + 500 * i);
 const P = [
-  { id: 'ca83', n: 'Clear Area (8.3 t)', d: 'Take-off & landing' },
-  { id: 'ca86', n: 'Clear Area (8.6 t)', d: 'Take-off & landing' },
-  { id: 'hpv', n: 'Ground / Elevated Helipad', d: 'Vertical take-off', d250: 'Vertical take-off & landing' },
-  { id: 'glh', n: 'Ground Level Helipad', d: 'Landing (shallow approach)' },
-  { id: 'oto', n: 'Offshore / Elevated Helideck', d: 'Take-off' },
-  { id: 'old', n: 'Offshore / Elevated Helideck', d: 'Landing' },
+  { id: 'CA', fig: '1-34', n: 'Clear Area', d: 'Take-off & landing', ext: true },
+  { id: 'V', fig: '1-30', n: 'Vertical Heliport', d: 'Take-off & landing', max: 8300, wind: [[0,0],[5,120],[10,230],[15,383],[20,418],[40,418]] },
+  { id: 'SH', fig: '1-32', n: 'Ground Heliport (Shallow)', d: 'Landing', max: 8300, wind: [[0,0],[5,144],[10,299],[15,439],[20,646],[40,646]] },
+  { id: 'OTO', fig: '1-37', n: 'Offshore Helideck', d: 'Take-off', ext: true },
+  { id: 'OLD', fig: '1-39', n: 'Offshore Helideck', d: 'Landing', ext: true, wind: [[0,0],[5,151],[10,301],[15,452],[20,533],[40,533]] },
 ];
 const LB = 2.20462;
 const $ = (id) => document.getElementById(id);
 const num = (el) => { const v = parseFloat(String(el.value).replace(',', '.')); return Number.isFinite(v) ? v : null; };
 const f = (x) => Math.round(x).toLocaleString('en-US');
-let unit = 'kg';
-try { if (localStorage.getItem('rtow-unit') === 'lb') unit = 'lb'; } catch (e) {}
+let unit = 'kg', ext = true;
+try { if (localStorage.getItem('rtow-unit') === 'lb') unit = 'lb'; if (localStorage.getItem('rtow-ext') === '0') ext = false; } catch (e) {}
+function seg(xs, x) { for (let i = 0; i < xs.length - 1; i++) if (x >= xs[i] && x <= xs[i + 1]) return i; return -1; }
+function lin(pts, x) { const xs = pts.map((p) => p[0]); const i = seg(xs, x); return pts[i][1] + (pts[i + 1][1] - pts[i][1]) * (x - xs[i]) / (xs[i + 1] - xs[i]); }
+function look(T, hp, t) {
+  const H = HP(T.length), hi = seg(H, hp), oi = seg(OATS, t);
+  if (hi < 0 || oi < 0) return null;
+  const fh = (hp - H[hi]) / (H[hi + 1] - H[hi]), fo = (t - OATS[oi]) / (OATS[oi + 1] - OATS[oi]);
+  let v = 0;
+  for (const [a, wa] of [[0, 1 - fh], [1, fh]]) for (const [b, wb] of [[0, 1 - fo], [1, fo]]) {
+    const w = wa * wb, c = T[hi + a][oi + b];
+    if (c === null) { if (w > 1e-9) return null; continue; }
+    v += w * c;
+  }
+  return v;
+}
 function calc() {
-  const t = num($('oat')), hp = num($('hp')) ?? 0, w = num($('wt'));
+  const t = num($('oat')), hp = num($('hp')), k = num($('wind')) ?? 0, w = num($('wt'));
   $('err').hidden = true; $('list').innerHTML = '';
-  if (t === null) { $('used').textContent = 'Enter OAT'; return; }
+  if (t === null || hp === null) { $('used').textContent = 'Enter OAT and pressure altitude'; return; }
   const err = (m) => { $('err').textContent = m; $('err').hidden = false; $('used').textContent = ''; };
-  if (hp > 250) return err(`Pressure altitude ${hp} ft: these tables cover 0 and 250 ft only. Use the RFM Supplement 4 charts.`);
-  const hi = hp > 0, T = hi ? R.t250 : R.t0, max = hi ? 50 : 55;
-  const row = Math.max(0, Math.ceil(Math.round(t * 10) / 10));
-  if (row > max) return err(`OAT ${t} °C is above the ${hi ? '250 ft' : '0 ft'} table (up to ${max} °C).`);
-  $('used').innerHTML = `Table <b>${hi ? '4.4.2 · 250 ft' : '4.4.1 · 0 ft'}</b> · row <b>${row} °C</b>` + (t < 0 ? ' (0 °C row used for sub-zero OAT)' : '');
+  if (t < -40 || t > 55) return err(`OAT ${t} °C is outside the tables (−40 to 55 °C).`);
+  if (hp < -1000 || hp > 8000) return err(`Pressure altitude ${hp} ft is outside the tables (−1000 to 8000 ft).`);
+  if (k < 0 || k > 40) return err(`Headwind ${k} kt is outside the wind tables (0 to 40 kt).`);
+  $('used').innerHTML = `<b>${hp} ft</b> · <b>${t} °C</b> · <b>${k} kt</b> headwind · weight extension <b>${ext ? 'fitted' : 'not fitted'}</b>`;
   const wkg = w === null ? null : (unit === 'kg' ? w : w / LB);
   let html = '';
   for (const p of P) {
-    const c = T[p.id][row];
-    if (!c) {
-      const last = T[p.id].reduce((a, x, i) => (x ? i : a), 0);
-      html += `<div class="prof na"><div><div class="n">${p.n}</div><div class="d">${p.d}</div></div><div class="v">Not available</div><div class="m" style="color:var(--muted)">No value above ${last} °C. Use Clear Area (8.3 t).</div></div>`;
+    const head = `<div><div class="n">${p.n}</div><div class="d">${p.d} · Fig ${p.fig}</div></div>`;
+    const base = look(R[p.id], hp, t);
+    if (base === null) {
+      const top = HP(R[p.id].length).at(-1);
+      html += `<div class="prof na">${head}<div class="v">Outside table</div><div class="x">${hp > top ? `Table goes up to ${top} ft.` : 'The table has no value for this temperature at this altitude.'}</div></div>`;
       continue;
     }
-    let kg = c[0], lb = c[1], flag = '';
-    if (hi && p.id === 'oto' && Math.abs(kg * LB - lb) > 2) {
-      flag = `<div class="flag">The 250 ft table's kg (${f(kg)}) and lb (${f(lb)}) disagree in this column. Showing the lower: the lb figure.</div>`;
-      kg = Math.floor(lb / LB);
-    }
+    const cap = p.max ?? (p.ext && ext ? 8600 : 8300);
+    const wc = p.wind ? lin(p.wind, k) : 0;
+    const kg = Math.floor(Math.min(base + wc, cap) + 1e-6);
+    const lb = Math.round(kg * LB);
+    const capped = base + wc > cap + 1e-6;
     const big = unit === 'kg' ? `${f(kg)} kg` : `${f(lb)} lb`, small = unit === 'kg' ? `${f(lb)} lb` : `${f(kg)} kg`;
+    let x = `Table ${f(Math.floor(base + 1e-6))} kg`;
+    x += p.wind ? ` + wind ${f(Math.floor(wc + 1e-6))} kg` : (k > 0 ? ' · no wind credit' : '');
+    if (capped) x += ` · limited to ${f(cap)} kg`;
     let cls = '', m = '';
     if (wkg !== null) {
-      const diffKg = kg - wkg, diff = unit === 'kg' ? diffKg : lb - w;
+      const diff = unit === 'kg' ? kg - wkg : lb - w;
       cls = diff >= 0 ? 'ok' : 'over';
       m = `<div class="m">${diff >= 0 ? 'Within limit · margin ' : 'Over by '}${f(Math.abs(diff))} ${unit}</div>`;
     }
-    html += `<div class="prof ${cls}"><div><div class="n">${p.n}</div><div class="d">${hi && p.d250 ? p.d250 : p.d}</div></div><div><div class="v">${big}</div><div class="v2">${small}</div></div>${m}${flag}</div>`;
+    html += `<div class="prof ${cls}">${head}<div><div class="v">${big}</div><div class="v2">${small}</div></div><div class="x">${x}</div>${m}</div>`;
   }
   $('list').innerHTML = html;
 }
@@ -132,13 +154,20 @@ function setUnit(u) {
   if (w !== null && u !== unit) $('wt').value = u === 'lb' ? Math.round(w * LB) : Math.round(w / LB);
   unit = u;
   try { localStorage.setItem('rtow-unit', u); } catch (e) {}
-  document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.u === u)));
+  document.querySelectorAll('[data-u]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.u === u)));
   $('wt').placeholder = u === 'kg' ? 'e.g. 8300' : 'e.g. 18300';
   calc();
 }
-document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => setUnit(b.dataset.u)));
-['oat', 'hp', 'wt'].forEach((id) => $(id).addEventListener('input', calc));
-setUnit(unit);
+function setExt(v) {
+  ext = v;
+  try { localStorage.setItem('rtow-ext', v ? '1' : '0'); } catch (e) {}
+  document.querySelectorAll('[data-x]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.x === '1') === v)));
+  calc();
+}
+document.querySelectorAll('[data-u]').forEach((b) => b.addEventListener('click', () => setUnit(b.dataset.u)));
+document.querySelectorAll('[data-x]').forEach((b) => b.addEventListener('click', () => setExt(b.dataset.x === '1')));
+['oat', 'hp', 'wind', 'wt'].forEach((id) => $(id).addEventListener('input', calc));
+setExt(ext); setUnit(unit);
 if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
 }
 </script>
