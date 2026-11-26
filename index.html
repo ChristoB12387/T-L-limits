@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RTOW">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1b2e">
+<title>AW189 RTOW</title>
+<style>
+  :root { --bg:#0f1b2e; --panel:#16263f; --line:#2b4166; --fg:#eef3fb; --muted:#9fb1cc; --ok:#2fbf71; --bad:#ff5d5d; --warn:#ffb020; --accent:#5aa9ff; }
+  * { box-sizing: border-box; min-width: 0; }
+  html, body { margin:0; background:var(--bg); color:var(--fg); font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: calc(16px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left)); }
+  h1 { font-size: 1.35rem; margin: 6px 0 2px; }
+  h2 { font-size: 1.05rem; margin: 0 0 10px; color: var(--accent); }
+  .sub { color: var(--muted); font-size: .85rem; margin-bottom: 12px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 12px 0; }
+  .caution { border-color: var(--warn); }
+  .grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 10px; }
+  .full { grid-column: 1 / -1; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: .82rem; color: var(--muted); }
+  input { font: inherit; font-size: 1.25rem; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: #0b1526; color: var(--fg); width: 100%; min-height: 48px; }
+  input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: #0b1526; border: 1px solid var(--line); border-radius: 999px; padding: 3px; margin-top: 2px; }
+  .seg button { font: inherit; font-size: .9rem; border: 0; background: transparent; color: var(--muted); border-radius: 999px; padding: 7px; min-height: 36px; font-weight: 600; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #06121f; }
+  .msg { color: var(--warn); font-size: .95rem; }
+  .note { font-size: .8rem; color: var(--muted); }
+  .used { font-size: .85rem; color: var(--muted); margin-bottom: 8px; }
+  .used b { color: var(--fg); }
+  .prof { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 2px 10px; align-items: center; padding: 12px 10px; border: 1px solid var(--line); border-radius: 10px; background: #0b1526; margin-top: 8px; border-left-width: 5px; }
+  .prof .n { font-weight: 600; font-size: .98rem; }
+  .prof .d { font-size: .75rem; color: var(--muted); }
+  .prof .v { font-size: 1.55rem; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; line-height: 1.1; }
+  .prof .v2 { font-size: .8rem; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+  .prof .m { grid-column: 1 / -1; font-size: .85rem; font-weight: 600; margin-top: 4px; }
+  .prof.ok { border-left-color: var(--ok); } .prof.ok .m { color: var(--ok); }
+  .prof.over { border-left-color: var(--bad); } .prof.over .m { color: var(--bad); }
+  .prof.na { opacity: .6; } .prof.na .v { font-size: 1rem; color: var(--muted); }
+  .flag { color: var(--warn); font-size: .75rem; grid-column: 1 / -1; margin-top: 4px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>AW189 RTOW</h1>
+  <div class="sub">CAT A take-off &amp; landing weights · works offline</div>
+
+  <div class="card caution">
+    <div class="note"><b style="color:var(--warn)">Quick-reference aid.</b> From Ops Manual Part B 4.4.1 (0 ft) and 4.4.2 (250 ft), referencing RFM Section 5 Supplement 4. Conditions: wind 0 kt, engine A/I and HEATER off. The published tables remain the reference.</div>
+  </div>
+
+  <div class="card">
+    <h2>Conditions</h2>
+    <div class="grid">
+      <label>OAT (°C)<input id="oat" type="number" inputmode="decimal" placeholder="0 to 55"></label>
+      <label>Pressure altitude (ft)<input id="hp" type="number" inputmode="numeric" placeholder="0 to 250" value="0"></label>
+      <label class="full">Your weight (optional)
+        <input id="wt" type="number" inputmode="decimal" placeholder="e.g. 8300">
+        <div class="seg" role="group" aria-label="Weight unit"><button type="button" data-u="kg" aria-pressed="true">kg</button><button type="button" data-u="lb" aria-pressed="false">lb</button></div>
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Maximum weight</h2>
+    <div class="used" id="used">Enter OAT</div>
+    <div class="msg" id="err" hidden></div>
+    <div id="list"></div>
+  </div>
+
+  <div class="note">Method: no interpolation. The OAT is rounded <b>up</b> to the next whole degree, and an OAT below 0 °C uses the 0 °C row. A pressure altitude of 0 ft or below uses the 0 ft table (4.4.1); above 0 ft up to 250 ft uses the 250 ft table (4.4.2). Above 250 ft there is no table here. The 0 ft table is published in lb only, so its kg figures are converted (1 kg = 2.20462 lb).</div>
+</main>
+<script>
+{
+const R = {"t0":{"ca83":[[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8264,18218],[8227,18138],[8191,18058],[8154,17977],[8118,17897],[8082,17817],[8045,17737],[8009,17656],[7972,17576],[7936,17496],[7863,17335],[7790,17175],[7717,17014],[7645,16854],[7572,16693]],"ca86":[[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"hpv":[[8158,17985],[8150,17968],[8142,17950],[8133,17931],[8124,17911],[8116,17892],[8106,17871],[8097,17850],[8087,17829],[8078,17808],[8068,17786],[8058,17764],[8047,17741],[8037,17719],[8027,17696],[8016,17673],[8006,17650],[7995,17627],[7985,17604],[7975,17581],[7964,17558],[7953,17534],[7944,17513],[7933,17489],[7922,17465],[7912,17444],[7901,17419],[7890,17395],[7880,17373],[7869,17348],[7858,17323],[7843,17291],[7830,17263],[7818,17236],[7805,17207],[7793,17180],[7780,17151],[7767,17123],[7752,17091],[7741,17067],[7727,17035],[7713,17005],[7699,16973],[7684,16941],[7670,16909],[7653,16873],[7638,16838],[7621,16802],[7603,16761],[7584,16719],[7563,16674],[7541,16626],[7518,16575],[7494,16521],[7468,16463],[7441,16404]],"glh":[[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8292,18280],[8283,18261],[8274,18241],[8266,18224],[8258,18206],[8249,18186],[8238,18162],[8227,18137],[8214,18109],[8199,18076],[8181,18037],[8161,17993],[8137,17939],[8110,17880],[8079,17812],[8044,17735],[8005,17648],[7960,17548],[7910,17439],[7855,17317],[7794,17182],[7727,17034],[7652,16870],[7571,16691],[7482,16496]],"oto":[[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18959],[8599,18957],[8597,18954],[8595,18949],[8592,18943],[8589,18935],[8584,18925],[8579,18913],[8572,18898],[8564,18880],[8560,18872],[8555,18861],[8547,18842],[8535,18817],[8520,18784],[8503,18745],[8482,18699],[8458,18647],[8428,18581],[8396,18510],[8367,18447],[8331,18367],[8292,18280],[8249,18186],[8204,18086],[8155,17978],[8103,17864],[8048,17742],[7990,17614],[7936,17496],[7864,17338],[7797,17189],[7726,17033],[7651,16867],[7572,16693]],"old":[[8572,18898],[8558,18867],[8544,18836],[8530,18805],[8516,18775],[8503,18745],[8489,18715],[8477,18688],[8465,18662],[8453,18636],[8440,18608],[8425,18574],[8412,18546],[8400,18519],[8388,18492],[8375,18463],[8364,18439],[8350,18408],[8340,18386],[8325,18353],[8313,18326],[8304,18307],[8292,18280],[8280,18254],[8268,18227],[8255,18200],[8244,18175],[8232,18148],[8220,18121],[8207,18093],[8194,18065],[8180,18034],[8167,18006],[8154,17977],[8141,17947],[8127,17917],[8115,17891],[8101,17860],[8087,17828],[8072,17796],[8058,17764],[8040,17726],[8025,17692],[8009,17657],[7993,17621],[7976,17585],[7961,17550],[7943,17512],[7926,17473],[7907,17433],[7889,17392],[7842,17289],[7788,17169],[7726,17033],[7653,16871],[7572,16693]]},"t250":{"ca83":[[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8255,18199],[8210,18100],[8165,18000],[8120,17901],[8075,17802],[8030,17702],[7985,17603],[7940,17504],[7895,17404],[7850,17305]],"ca86":[[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"hpv":[[8122,17906],[8114,17888],[8105,17869],[8097,17851],[8088,17832],[8079,17812],[8071,17793],[8062,17773],[8053,17753],[8043,17733],[8034,17712],[8025,17691],[8015,17670],[8005,17648],[7995,17626],[7985,17604],[7975,17583],[7965,17561],[7955,17539],[7945,17517],[7935,17495],[7925,17471],[7914,17448],[7903,17423],[7892,17399],[7882,17376],[7871,17352],[7859,17327],[7849,17304],[7838,17279],[7826,17254],[7811,17221],[7797,17190],[7784,17160],[7770,17129],[7756,17099],[7742,17068],[7728,17036],[7713,17004],[7700,16975],[7685,16943],[7668,16906],[7651,16868],[7634,16830],[7617,16792],[7599,16753],[7581,16714],[7563,16674],[7544,16632],[7525,16589],[7505,16545]],"glh":[[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8300,18298],[8298,18295],[8297,18291],[8295,18287],[8293,18284],[8292,18280],[8290,18277],[8288,18273],[8287,18269],[8285,18266],[8284,18262],[8272,18236],[8260,18210],[8248,18184],[8237,18159],[8225,18133],[8213,18107],[8200,18078],[8187,18049],[8173,18018],[8158,17985],[8127,17918],[8095,17847],[8061,17771],[8026,17693],[7988,17611],[7949,17524],[7907,17432],[7862,17334],[7816,17230],[7766,17121]],"oto":[[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8600,18960],[8596,18942],[8593,18925],[8589,18908],[8586,18891],[8582,18873],[8578,18856],[8575,18839],[8571,18821],[8568,18804],[8564,18787],[8553,18755],[8541,18721],[8527,18686],[8513,18649],[8497,18611],[8479,18572],[8460,18531],[8440,18489],[8419,18445],[8396,18400],[8367,18309],[8333,18213],[8296,18113],[8255,18010],[8211,17902],[8163,17791],[8112,17676],[8056,17555],[7998,17432],[7936,17305]],"old":[[8526,18798],[8514,18770],[8501,18742],[8489,18715],[8476,18687],[8464,18660],[8451,18632],[8439,18604],[8426,18576],[8413,18548],[8400,18520],[8388,18493],[8376,18467],[8365,18441],[8353,18414],[8341,18388],[8328,18360],[8316,18334],[8304,18308],[8292,18281],[8280,18255],[8269,18229],[8256,18202],[8244,18176],[8233,18150],[8221,18124],[8209,18097],[8197,18071],[8185,18045],[8173,18019],[8161,17991],[8147,17961],[8133,17930],[8119,17898],[8104,17866],[8089,17834],[8075,17802],[8060,17769],[8045,17735],[8029,17702],[8014,17668],[7996,17628],[7978,17588],[7959,17547],[7941,17506],[7922,17465],[7903,17423],[7884,17381],[7865,17339],[7845,17296],[7826,17253]]}};
+const P = [
+  { id: 'ca83', n: 'Clear Area (8.3 t)', d: 'Take-off & landing' },
+  { id: 'ca86', n: 'Clear Area (8.6 t)', d: 'Take-off & landing' },
+  { id: 'hpv', n: 'Ground / Elevated Helipad', d: 'Vertical take-off', d250: 'Vertical take-off & landing' },
+  { id: 'glh', n: 'Ground Level Helipad', d: 'Landing (shallow approach)' },
+  { id: 'oto', n: 'Offshore / Elevated Helideck', d: 'Take-off' },
+  { id: 'old', n: 'Offshore / Elevated Helideck', d: 'Landing' },
+];
+const LB = 2.20462;
+const $ = (id) => document.getElementById(id);
+const num = (el) => { const v = parseFloat(String(el.value).replace(',', '.')); return Number.isFinite(v) ? v : null; };
+const f = (x) => Math.round(x).toLocaleString('en-US');
+let unit = 'kg';
+try { if (localStorage.getItem('rtow-unit') === 'lb') unit = 'lb'; } catch (e) {}
+function calc() {
+  const t = num($('oat')), hp = num($('hp')) ?? 0, w = num($('wt'));
+  $('err').hidden = true; $('list').innerHTML = '';
+  if (t === null) { $('used').textContent = 'Enter OAT'; return; }
+  const err = (m) => { $('err').textContent = m; $('err').hidden = false; $('used').textContent = ''; };
+  if (hp > 250) return err(`Pressure altitude ${hp} ft: these tables cover 0 and 250 ft only. Use the RFM Supplement 4 charts.`);
+  const hi = hp > 0, T = hi ? R.t250 : R.t0, max = hi ? 50 : 55;
+  const row = Math.max(0, Math.ceil(Math.round(t * 10) / 10));
+  if (row > max) return err(`OAT ${t} °C is above the ${hi ? '250 ft' : '0 ft'} table (up to ${max} °C).`);
+  $('used').innerHTML = `Table <b>${hi ? '4.4.2 · 250 ft' : '4.4.1 · 0 ft'}</b> · row <b>${row} °C</b>` + (t < 0 ? ' (0 °C row used for sub-zero OAT)' : '');
+  const wkg = w === null ? null : (unit === 'kg' ? w : w / LB);
+  let html = '';
+  for (const p of P) {
+    const c = T[p.id][row];
+    if (!c) {
+      const last = T[p.id].reduce((a, x, i) => (x ? i : a), 0);
+      html += `<div class="prof na"><div><div class="n">${p.n}</div><div class="d">${p.d}</div></div><div class="v">Not available</div><div class="m" style="color:var(--muted)">No value above ${last} °C. Use Clear Area (8.3 t).</div></div>`;
+      continue;
+    }
+    let kg = c[0], lb = c[1], flag = '';
+    if (hi && p.id === 'oto' && Math.abs(kg * LB - lb) > 2) {
+      flag = `<div class="flag">The 250 ft table's kg (${f(kg)}) and lb (${f(lb)}) disagree in this column. Showing the lower: the lb figure.</div>`;
+      kg = Math.floor(lb / LB);
+    }
+    const big = unit === 'kg' ? `${f(kg)} kg` : `${f(lb)} lb`, small = unit === 'kg' ? `${f(lb)} lb` : `${f(kg)} kg`;
+    let cls = '', m = '';
+    if (wkg !== null) {
+      const diffKg = kg - wkg, diff = unit === 'kg' ? diffKg : lb - w;
+      cls = diff >= 0 ? 'ok' : 'over';
+      m = `<div class="m">${diff >= 0 ? 'Within limit · margin ' : 'Over by '}${f(Math.abs(diff))} ${unit}</div>`;
+    }
+    html += `<div class="prof ${cls}"><div><div class="n">${p.n}</div><div class="d">${hi && p.d250 ? p.d250 : p.d}</div></div><div><div class="v">${big}</div><div class="v2">${small}</div></div>${m}${flag}</div>`;
+  }
+  $('list').innerHTML = html;
+}
+function setUnit(u) {
+  const w = num($('wt'));
+  if (w !== null && u !== unit) $('wt').value = u === 'lb' ? Math.round(w * LB) : Math.round(w / LB);
+  unit = u;
+  try { localStorage.setItem('rtow-unit', u); } catch (e) {}
+  document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.u === u)));
+  $('wt').placeholder = u === 'kg' ? 'e.g. 8300' : 'e.g. 18300';
+  calc();
+}
+document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => setUnit(b.dataset.u)));
+['oat', 'hp', 'wt'].forEach((id) => $(id).addEventListener('input', calc));
+setUnit(unit);
+if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+</script>
+</body>
+</html>
